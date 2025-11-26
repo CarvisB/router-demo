@@ -132,7 +132,6 @@ useEffect(() => {
 
   return (
     <>
-      <BrowserRouter basename="/router-demo/">
         <PokedexContext.Provider value={{ favorites, addFavorite, removeFavorite }}>
           <nav style={{ display: "flex", gap: "1rem", padding: "1rem" }}>
             <Link to="/">Home</Link>
@@ -182,7 +181,6 @@ useEffect(() => {
             <Route path='*' element={<NotFound />} />
           </Routes>
         </PokedexContext.Provider>
-     </BrowserRouter>
     </>
   )
 }
