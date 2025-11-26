@@ -1,5 +1,5 @@
 import React, { useEffect, useReducer, useState, type JSX } from 'react'
-import { Routes, Route, Link, Outlet, Navigate, useNavigate, useSearchParams } from "react-router-dom"
+import { Routes, Route, Link, Outlet, Navigate, useNavigate, useSearchParams, BrowserRouter } from "react-router-dom"
 import { useParams } from 'react-router-dom'
 import './App.css'
 
@@ -132,56 +132,57 @@ useEffect(() => {
 
   return (
     <>
-      <PokedexContext.Provider value={{ favorites, addFavorite, removeFavorite }}>
-        <nav style={{ display: "flex", gap: "1rem", padding: "1rem" }}>
-          <Link to="/">Home</Link>
-          <Link to="/pokedex"> Pokedex</Link>
-          <Link to="/favorites">Favorites</Link>
-          <Link to="/help">Help</Link>
-          <button onClick={() => setLoggedIn(true)}>Log In</button>
-          <button onClick={() => setLoggedIn(false)}>Log Out</button>
-        </nav>
+      <BrowserRouter basename="/router-demo">
+        <PokedexContext.Provider value={{ favorites, addFavorite, removeFavorite }}>
+          <nav style={{ display: "flex", gap: "1rem", padding: "1rem" }}>
+            <Link to="/">Home</Link>
+            <Link to="/pokedex"> Pokedex</Link>
+            <Link to="/favorites">Favorites</Link>
+            <Link to="/help">Help</Link>
+            <button onClick={() => setLoggedIn(true)}>Log In</button>
+            <button onClick={() => setLoggedIn(false)}>Log Out</button>
+          </nav>
 
-        <Routes>
-          <Route path='/' element={<Home />} />
+          <Routes>
+            <Route path='/' element={<Home />} />
 
-          <Route path='/pokedex' element={<Pokedex />}>
-            <Route path="fire" element={<FirePokemon />} />
-            <Route path="water" element={<WaterPokemon />} />
-            <Route path="grass" element={<GrassPokemon />}/>
-            <Route path="normal" element={<NormalPokemon />} />
-            <Route path="electric" element={<ElectricPokemon />} />
-            <Route path="ice" element={<IcePokemon />} />
-            <Route path="fighting" element={<FightingPokemon />} />
-            <Route path="poison" element={<PoisonPokemon />} />
-            <Route path="ground" element={<GroundPokemon/>} />
-            <Route path="flying" element={<FlyingPokemon/>} />
-            <Route path="psychic" element={<PsychicPokemon/>} />
-            <Route path="bug" element={<BugPokemon />} />
-            <Route path="rock" element={<RockPokemon />} />
-            <Route path="ghost" element={<GhostPokemon />} />
-            <Route path="dragon" element={<DragonPokemon />} />
-            <Route path="dark" element={<DarkPokemon />} />
-            <Route path="steel" element={<SteelPokemon />} />
-            <Route path="fairy" element={<FairyPokemon />} />
-          </Route>
+            <Route path='/pokedex' element={<Pokedex />}>
+              <Route path="fire" element={<FirePokemon />} />
+              <Route path="water" element={<WaterPokemon />} />
+              <Route path="grass" element={<GrassPokemon />}/>
+              <Route path="normal" element={<NormalPokemon />} />
+              <Route path="electric" element={<ElectricPokemon />} />
+              <Route path="ice" element={<IcePokemon />} />
+              <Route path="fighting" element={<FightingPokemon />} />
+              <Route path="poison" element={<PoisonPokemon />} />
+              <Route path="ground" element={<GroundPokemon/>} />
+              <Route path="flying" element={<FlyingPokemon/>} />
+              <Route path="psychic" element={<PsychicPokemon/>} />
+              <Route path="bug" element={<BugPokemon />} />
+              <Route path="rock" element={<RockPokemon />} />
+              <Route path="ghost" element={<GhostPokemon />} />
+              <Route path="dragon" element={<DragonPokemon />} />
+              <Route path="dark" element={<DarkPokemon />} />
+              <Route path="steel" element={<SteelPokemon />} />
+              <Route path="fairy" element={<FairyPokemon />} />
+            </Route>
 
-          <Route 
-            path='/favorites'
-            element={
-            <ProtectedRoute isLoggedIn={loggedIn}>
-              <Favorites />
-          </ProtectedRoute>
-          } />
-          <Route path='/help' element={<Help />} />
-          <Route 
-            path='/pokemon/:id' 
-            element={<PokemonDetails />} />
-          {/*The * path should always be last to route any unknown pages. */}
-          <Route path='*' element={<NotFound />} />
-        </Routes>
-      </PokedexContext.Provider>
-     
+            <Route 
+              path='/favorites'
+              element={
+              <ProtectedRoute isLoggedIn={loggedIn}>
+                <Favorites />
+            </ProtectedRoute>
+            } />
+            <Route path='/help' element={<Help />} />
+            <Route 
+              path='/pokemon/:id' 
+              element={<PokemonDetails />} />
+            {/*The * path should always be last to route any unknown pages. */}
+            <Route path='*' element={<NotFound />} />
+          </Routes>
+        </PokedexContext.Provider>
+     </BrowserRouter>
     </>
   )
 }
@@ -203,9 +204,11 @@ useEffect(() => {
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const [search, setSearch] = useState("");
-    const [pokemonList, setPokemonList] = useState<{name: string; id: number}[]>([]);
+    const [pokemonList, setPokemonList] = useState<{name: string; id: number; sprite: string; types: string[];}[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
 
+    const type: string | null = searchParams.get("type");
+    console.log(type)
 
     useEffect(() => {
       async function loadPokemon() {
@@ -242,9 +245,14 @@ useEffect(() => {
     p.name.toLowerCase().includes(search.toLowerCase())
     );
 
+    const typeFiltered = type 
+  ? filt.filter(p => p.types.includes(type))
+  : filt;
+
+
+    
     // Read type from URL (?type=value)
-    const type: string | null = searchParams.get("type");
-    console.log(type)
+    
     // Helper for setting params (fully typed)
     function setType(value: string): void {
       if(value === "") {
@@ -283,8 +291,8 @@ useEffect(() => {
       />
 
       <ul style={{ listStyle: "none", padding: 0 }}>
-        {filt.map ((p) => (
-          <PokemonListItem key={p.id} id={p.id} name={p.name} />
+        {typeFiltered.map ((p) => (
+          <PokemonListItem key={p.id} id={p.id} name={p.name} types={p.types} />
         ))}
       </ul>
 
@@ -495,7 +503,7 @@ useEffect(() => {
     )
   }
 
-  function PokemonListItem({ id, name }: {id: number; name: string }) {
+  function PokemonListItem({ id, name, types }: {id: number; name: string; types: string[] }) {
     const context = React.useContext(PokedexContext);
     if(!context) return null;
 
@@ -506,33 +514,47 @@ useEffect(() => {
 
     return(
       <>
-        <li style={{
-          marginBottom: "0.5rem",
-          display: "flex",
-          alignItems: "center",
-          gap: "1rem"
-        }}>
-          <img
-            src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`}
-            alt={name}
-            width={50}
-            height={50}
-          />
-            <button onClick={() => navigate(`/pokemon/${id}`)}>
-              {name} (#{id})
-            </button>
-            <button
-              onClick={() => (isFav ? removeFavorite(id) : addFavorite(id))}
-                style={{
-              fontSize: "1.5rem",
-              background: "none",
-              border: "none",
-              cursor: "pointer"
-              }}
-            >
-              {isFav ? "⭐" : "☆"}
-            </button>
-        </li>
+    <li
+      style={{
+        marginBottom: "0.75rem",
+        display: "flex",
+        alignItems: "center",
+        gap: "1rem",
+        justifyContent: "space-between"
+      }}
+    >
+      {/* Left: Image + Name */}
+      <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+        <img
+          src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`}
+          alt={name}
+          width={50}
+        />
+
+        <div onClick={() => navigate(`/pokemon/${id}`)} style={{ cursor: "pointer" }}>
+          <strong>{name.toUpperCase()}</strong> #{id}
+
+          <div style={{ marginTop: "0.25rem", display: "flex", gap: "0.3rem" }}>
+            {types.map((t: any) => (
+              <TypeBadge key={t} type={t} />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Right: Favorite toggle */}
+      <button
+        onClick={() => (isFav ? removeFavorite(id) : addFavorite(id))}
+        style={{
+          fontSize: "1.5rem",
+          background: "none",
+          border: "none",
+          cursor: "pointer"
+        }}
+      >
+        {isFav ? "⭐" : "☆"}
+      </button>
+    </li>
       </>
       )
   }
