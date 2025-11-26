@@ -1,5 +1,5 @@
 import React, { useEffect, useReducer, useState, type JSX } from 'react'
-import { Routes, Route, Link, Outlet, Navigate, useNavigate, useSearchParams, BrowserRouter } from "react-router-dom"
+import { Routes, Route, Link, Outlet, Navigate, useNavigate, useSearchParams } from "react-router-dom"
 import { useParams } from 'react-router-dom'
 import './App.css'
 
