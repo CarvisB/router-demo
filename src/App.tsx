@@ -213,7 +213,7 @@ useEffect(() => {
     useEffect(() => {
       async function loadPokemon() {
         try {
-          const res = await fetch(`https://pokeapi.co/api/v2/pokemon?limit=151`);
+          const res = await fetch(`https://pokeapi.co/api/v2/pokemon?limit=1025`);
           const data = await res.json();
 
           const detailed = await Promise.all(
