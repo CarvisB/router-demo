@@ -204,7 +204,9 @@ useEffect(() => {
     const [search, setSearch] = useState("");
     const [pokemonList, setPokemonList] = useState<{name: string; id: number; sprite: string; types: string[];}[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
-
+    const [page, setPage] = useState(1);
+    
+    const pageSize = 20;
     const type: string | null = searchParams.get("type");
     console.log(type)
 
@@ -239,6 +241,14 @@ useEffect(() => {
       loadPokemon();
     }, [])
 
+    useEffect(() => {
+      setPage(1);
+    }, [search]);
+
+    useEffect(() =>{
+      setPage(1);
+    }, [type])
+
      const filt = pokemonList.filter(p =>
     p.name.toLowerCase().includes(search.toLowerCase())
     );
@@ -246,6 +256,12 @@ useEffect(() => {
     const typeFiltered = type 
   ? filt.filter(p => p.types.includes(type))
   : filt;
+
+  const start = (page - 1) * pageSize;
+  const end = start + pageSize;
+
+  const paginated = typeFiltered.slice(start, end);
+  const totalPages = Math.ceil(typeFiltered.length / pageSize);
 
 
     
@@ -281,18 +297,38 @@ useEffect(() => {
       </button>
 
       <input 
+        className='poke-search'
         type='text'
         placeholder='Search Pokemon...'
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        style={{ padding: "0.5rem", marginBottom: "1rem", width: "200px" }}
       />
 
       <ul style={{ listStyle: "none", padding: 0 }}>
-        {typeFiltered.map ((p) => (
+        {paginated.map ((p) => (
           <PokemonListItem key={p.id} id={p.id} name={p.name} types={p.types} />
         ))}
       </ul>
+
+      <div className='pagination'>
+        <button 
+        disabled={page === 1}
+        onClick={() => setPage(page - 1)}
+        >
+          ◀ Previous
+        </button>
+
+        <span>
+          Page {page} of {totalPages}
+        </span>
+
+        <button
+          disabled={page === totalPages}
+          onClick={() => setPage(page + 1)}
+        >
+          Next ▶
+        </button>
+      </div>
 
       {/* Filter buttons (typed + safe) */}
       <div style={{ margin: "1rem 0", display: "flex", gap: "1rem", flexWrap: "wrap"  }}>
@@ -316,28 +352,6 @@ useEffect(() => {
         <button onClick={() => setType("fairy")}>✨ Fairy Pokemon</button>
         <button onClick={() => setType("")}>Clear Filter</button>
       </div>
-
-
-      <nav style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
-        <Link to="fire">Fire Pokemon</Link>
-        <Link to="water">Water Pokemon</Link>
-        <Link to="grass">Grass Pokemon</Link>
-        <Link to="normal">Normal Pokemon</Link>
-        <Link to="electric">Electric Pokemon</Link>
-        <Link to="ice">Ice Pokemon</Link>
-        <Link to="fighting">Fighting Pokemon</Link>
-        <Link to="poison">Poison Pokemon</Link>
-        <Link to="ground">Ground Pokemon</Link>
-        <Link to="flying">Flying Pokemon</Link>
-        <Link to="psychic">Psychic Pokemon</Link>
-        <Link to="bug">Bug Pokemon</Link>
-        <Link to="rock">Rock Pokemon</Link>
-        <Link to="ghost">Ghost Pokemon</Link>
-        <Link to="dragon">Dragon Pokemon</Link>
-        <Link to="dark">Dark Pokemon</Link>
-        <Link to="steel">Steel Pokemon</Link>
-        <Link to="fairy">Fairy Pokemon</Link>
-      </nav>
 
       <Outlet />
     </>
@@ -512,17 +526,9 @@ useEffect(() => {
 
     return(
       <>
-    <li
-      style={{
-        marginBottom: "0.75rem",
-        display: "flex",
-        alignItems: "center",
-        gap: "1rem",
-        justifyContent: "space-between"
-      }}
-    >
+    <li className='pokemon-item'>
       {/* Left: Image + Name */}
-      <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+      <div className='pokemon-left'>
         <img
           src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`}
           alt={name}
@@ -541,15 +547,7 @@ useEffect(() => {
       </div>
 
       {/* Right: Favorite toggle */}
-      <button
-        onClick={() => (isFav ? removeFavorite(id) : addFavorite(id))}
-        style={{
-          fontSize: "1.5rem",
-          background: "none",
-          border: "none",
-          cursor: "pointer"
-        }}
-      >
+      <button className='star-btn' onClick={() => (isFav ? removeFavorite(id) : addFavorite(id))}>
         {isFav ? "⭐" : "☆"}
       </button>
     </li>
@@ -564,7 +562,7 @@ useEffect(() => {
           marginBottom: "0.75rem",
           display: "flex",
           alignItems: "center",
-          gap: "1rem"
+          gap: "1rem",
         }}>
           {/*Image PH */}
           <div style={{
