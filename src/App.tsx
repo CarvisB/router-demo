@@ -205,6 +205,7 @@ useEffect(() => {
     const [pokemonList, setPokemonList] = useState<{name: string; id: number; sprite: string; types: string[];}[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [page, setPage] = useState(1);
+    const [viewMode, setViewMode] = useState<"list" | "grid">("list");
     
     const pageSize = 20;
     const type: string | null = searchParams.get("type");
@@ -304,11 +305,56 @@ useEffect(() => {
         onChange={(e) => setSearch(e.target.value)}
       />
 
-      <ul style={{ listStyle: "none", padding: 0 }}>
-        {paginated.map ((p) => (
-          <PokemonListItem key={p.id} id={p.id} name={p.name} types={p.types} />
-        ))}
-      </ul>
+      <div style={{ marginBottom: "1rem", display: "flex", gap: "1rem" }}>
+        <button
+          onClick={() => setViewMode("list")}
+          style={{ background: viewMode === "list" ? "#ffcb05" : "#ddd", padding: "0.5rem", borderRadius: "6px" }}
+        >
+          📄 List View
+        </button>
+
+        <button onClick={() => setViewMode("grid")}
+          style={{ background: viewMode === "grid" ? "#ffcb05" : "#ddd", padding: "0.5rem", borderRadius: "6px" }}
+          >
+          🟦 Grid View
+        </button>
+      </div>
+
+      <div style={{ margin: "1rem 0", display: "flex", gap: "1rem", flexWrap: "wrap"  }}>
+        <button onClick={() => setType("fire")}>🔥 Fire</button>
+        <button onClick={() => setType("water")}>💧 Water</button>
+        <button onClick={() => setType("grass")}>🍃 Grass</button>
+        <button onClick={() => setType("normal")}>⚪ Normal Pokemon</button>
+        <button onClick={() => setType("electric")}>⚡Electric Pokemon</button>
+        <button onClick={() => setType("ice")}>❄️ Ice Pokemon</button>
+        <button onClick={() => setType("fighting")}>🥊 Fighting Pokemon</button>
+        <button onClick={() => setType("poison")}>☠️ Poison Pokemon</button>
+        <button onClick={() => setType("ground")}>🟤 Ground Pokemon</button>
+        <button onClick={() => setType("flying")}>🕊️ Flying Pokemon</button>
+        <button onClick={() => setType("psychic")}>🔮 Psychic Pokemon</button>
+        <button onClick={() => setType("bug")}>🐛 Bug Pokemon</button>
+        <button onClick={() => setType("rock")}>🪨 Rock Pokemon</button>
+        <button onClick={() => setType("ghost")}>👻 Ghost Pokemon</button>
+        <button onClick={() => setType("dragon")}>🐉 Dragon Pokemon</button>
+        <button onClick={() => setType("dark")}>🌙 DarkPokemon</button>
+        <button onClick={() => setType("steel")}>⚙️ Steel Pokemon</button>
+        <button onClick={() => setType("fairy")}>✨ Fairy Pokemon</button>
+        <button onClick={() => setType("")}>Clear Filter</button>
+      </div>
+
+      {viewMode === "list" ? (
+        <ul style={{ listStyle: "none", padding: 0 }}>
+          {paginated.map((p) => (
+            <PokemonListItem key={p.id} id={p.id} name={p.name} types={p.types} />
+          ))}
+        </ul>
+      ) : (
+        <div className="poke-grid">
+          {paginated.map((p) => (
+            <PokemonGridItem key={p.id} id={p.id} name={p.name} types={p.types} />
+          ))}
+        </div>
+      )}
 
       <div className='pagination'>
         <button 
@@ -331,27 +377,6 @@ useEffect(() => {
       </div>
 
       {/* Filter buttons (typed + safe) */}
-      <div style={{ margin: "1rem 0", display: "flex", gap: "1rem", flexWrap: "wrap"  }}>
-        <button onClick={() => setType("fire")}>🔥 Fire</button>
-        <button onClick={() => setType("water")}>💧 Water</button>
-        <button onClick={() => setType("grass")}>🍃 Grass</button>
-        <button onClick={() => setType("normal")}>⚪ Normal Pokemon</button>
-        <button onClick={() => setType("electric")}>⚡Electric Pokemon</button>
-        <button onClick={() => setType("ice")}>❄️ Ice Pokemon</button>
-        <button onClick={() => setType("fighting")}>🥊 Fighting Pokemon</button>
-        <button onClick={() => setType("poison")}>☠️ Poison Pokemon</button>
-        <button onClick={() => setType("ground")}>🟤 Ground Pokemon</button>
-        <button onClick={() => setType("flying")}>🕊️ Flying Pokemon</button>
-        <button onClick={() => setType("psychic")}>🔮 Psychic Pokemon</button>
-        <button onClick={() => setType("bug")}>🐛 Bug Pokemon</button>
-        <button onClick={() => setType("rock")}>🪨 Rock Pokemon</button>
-        <button onClick={() => setType("ghost")}>👻 Ghost Pokemon</button>
-        <button onClick={() => setType("dragon")}>🐉 Dragon Pokemon</button>
-        <button onClick={() => setType("dark")}>🌙 DarkPokemon</button>
-        <button onClick={() => setType("steel")}>⚙️ Steel Pokemon</button>
-        <button onClick={() => setType("fairy")}>✨ Fairy Pokemon</button>
-        <button onClick={() => setType("")}>Clear Filter</button>
-      </div>
 
       <Outlet />
     </>
@@ -553,6 +578,53 @@ useEffect(() => {
     </li>
       </>
       )
+  }
+
+  function PokemonGridItem({id, name, types}: {id: number; name: string; types: string[] }) {
+    const navigate = useNavigate();
+    const context = React.useContext(PokedexContext)
+    if(!context) return null;
+
+    const { favorites, addFavorite, removeFavorite } = context;
+    const isFav = favorites.includes(id);
+
+    return(
+      <>
+        <div className="poke-card" onClick={() => navigate(`/pokemon/${id}`)}>
+          <img 
+            src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`}
+            alt={name}
+            width={70}
+          />
+
+          <strong>{name.toUpperCase()}</strong>
+          <small>#{id}</small>
+
+          <div className="poke-card-types">
+            {types.map((t) => (
+              <TypeBadge key={t} type={t} />
+            ))}
+          </div>
+
+          <button onClick={(e) => {
+            e.stopPropagation();
+            isFav ? removeFavorite(id) : addFavorite(id);
+          }}
+            style={{
+            marginTop: "0.3rem",
+            fontSize: "1.2rem",
+            background: "none",
+            border: "none",
+            cursor: "pointer"
+          }}
+          >
+            {isFav ? "⭐" : "☆"}
+          </button>
+
+        </div>
+      </>
+    )
+
   }
 
   function PokemonSkeleton() {
