@@ -9,28 +9,28 @@ type PokedexContextType = {
   removeFavorite: (id:number) => void;
 }
 
-function TypeBadge({ type }: { type: string }) {
-  const colors: Record<string, string> = {
-    fire: "#F08030",
-    water: "#6890F0",
-    grass: "#78C850",
-    electric: "#F8D030",
-    ice: "#98D8D8",
-    fighting: "#C03028",
-    poison: "#A040A0",
-    ground: "#E0C068",
-    flying: "#A890F0",
-    psychic: "#F85888",
-    bug: "#A8B820",
-    rock: "#B8A038",
-    ghost: "#705898",
-    dragon: "#7038F8",
-    dark: "#705848",
-    steel: "#B8B8D0",
-    fairy: "#EE99AC",
-    normal: "#A8A878",
+  export const TYPE_COLORS: Record<string, string> = {
+  fire: "#F08030",
+  water: "#6890F0",
+  grass: "#78C850",
+  electric: "#F8D030",
+  ice: "#98D8D8",
+  fighting: "#C03028",
+  poison: "#A040A0",
+  ground: "#E0C068",
+  flying: "#A890F0",
+  psychic: "#F85888",
+  bug: "#A8B820",
+  rock: "#B8A038",
+  ghost: "#705898",
+  dragon: "#7038F8",
+  dark: "#705848",
+  steel: "#B8B8D0",
+  fairy: "#EE99AC",
+  normal: "#A8A878",
   };
 
+function TypeBadge({ type }: { type: string }) {
   const icons: Record<string, string> = {
     fire: "🔥",
     water: "💧",
@@ -52,10 +52,11 @@ function TypeBadge({ type }: { type: string }) {
     normal: "⚪",
   };
 
+
   return (
     <span
       style={{
-        backgroundColor: colors[type] || "#AAA",
+        backgroundColor: TYPE_COLORS[type] || "#AAA",
         padding: "0.3rem 0.6rem",
         borderRadius: "12px",
         color: "white",
@@ -206,7 +207,8 @@ useEffect(() => {
     const [loading, setLoading] = useState<boolean>(true);
     const [page, setPage] = useState(1);
     const [viewMode, setViewMode] = useState<"list" | "grid">("list");
-    
+    const [sortBy, setSortBy] = useState<"id-asc" | "id-desc" | "name-asc" | "name-desc">("id-asc");
+
     const pageSize = 20;
     const type: string | null = searchParams.get("type");
     console.log(type)
@@ -258,11 +260,26 @@ useEffect(() => {
   ? filt.filter(p => p.types.includes(type))
   : filt;
 
+  const sorted = [...typeFiltered].sort((a, b) => {
+    switch(sortBy) {
+      case "id-asc":
+        return a.id - b.id;
+      case "id-desc":
+        return b.id - a.id;
+      case "name-asc": 
+        return a.name.localeCompare(b.name);
+      case "name-desc":
+        return b.name.localeCompare(a.name);
+      default:
+        return 0;
+    }
+  })
+
   const start = (page - 1) * pageSize;
   const end = start + pageSize;
 
-  const paginated = typeFiltered.slice(start, end);
-  const totalPages = Math.ceil(typeFiltered.length / pageSize);
+  const paginated = sorted.slice(start, end);
+  const totalPages = Math.ceil(sorted.length / pageSize);
 
 
     
@@ -304,6 +321,19 @@ useEffect(() => {
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
+
+      <div style={{ margin: "1rem 0" }}>
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value as any)}
+          style={{ padding: "0.5rem", borderRadius: "6px" }}
+        >
+          <option value="id-asc">ID ↑ (1 → 1025)</option>
+          <option value="id-desc">ID ↓ (1025 → 1)</option>
+          <option value="name-asc">Name A → Z</option>
+          <option value="name-desc">Name Z → A</option>
+        </select>
+      </div>
 
       <div style={{ marginBottom: "1rem", display: "flex", gap: "1rem" }}>
         <button
@@ -478,10 +508,13 @@ useEffect(() => {
       sprites: { front_default: string};
       types: 
       {type: {name: string} }[];
+      stats: {base_stat: number; stat: {name: string}}[];
+      abilities: {name: string; description: string }[];
     }>(null);
 
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    const [abilityInfo, setAbilityInfo] = useState<Record<string, string>>({});
 
     useEffect(() => {
       async function fetchPokemon() {
@@ -490,7 +523,32 @@ useEffect(() => {
           if(!res.ok) throw new Error("Pokemon not found");
 
           const data = await res.json();
-          setPokemon(data)
+
+          const abilityDetails = await Promise.all(
+            data.abilities.map(async(a: any) => {
+              const abilityRes = await fetch(a.ability.url);
+              const abilityData = await abilityRes.json();
+
+              const enlgishEntry = abilityData.effect_entries.find((e:any) => e.language.name === "en"
+            );
+
+            return {
+              name: a.ability.name,
+              description: enlgishEntry?.effect || "No description available"
+                };
+              })
+            );
+
+            const formatted = {
+              name: data.name,
+              sprites: data.sprites,
+              types: data.types,
+              stats: data.stats,
+              abilities: abilityDetails
+            }
+
+            setPokemon(formatted)
+          
         } catch(e) {
           setError("Failed to load Pokemon");
         } finally {
@@ -514,9 +572,10 @@ useEffect(() => {
         <img 
           src={pokemon.sprites.front_default}
           alt={pokemon.name}
-          width={150}
+          width={250}
         />
 
+        
         <h3>Type(s):</h3>
         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
           {pokemon.types.map((t, i) => (
@@ -524,6 +583,44 @@ useEffect(() => {
           ))}
         </div>
 
+        <h3>Stats:</h3>
+        <div style={{ maxWidth: "400px" }}>
+          {pokemon.stats.map((s, i) => (
+            <div key={i} style={{ marginBottom: "0.4rem" }}>
+              <strong>{s.stat.name.toUpperCase()}</strong>
+
+              <div
+                style={{
+                  background: "#ddd",
+                  height: "10px",
+                  borderRadius: "6px",
+                  overflow: "hidden",
+                  marginTop: "4px"
+                }}
+              >
+                <div
+                  style={{
+                    width: `${(s.base_stat / 150) * 100}%`,
+                    background: "#4caf50",
+                    height: "100%"
+                  }}
+                ></div>
+              </div>
+
+              <span style={{ fontSize: "0.8rem" }}>{s.base_stat}</span>
+            </div>
+          ))}
+        </div>
+
+        <h3 style={{ marginTop: "1rem" }}>Abilities:</h3>
+        <ul>
+          {pokemon.abilities.map((a, i) => (
+            <li key={i} style={{ marginBottom: "0.8rem" }}>
+              <strong>{a.name.toUpperCase()}</strong>
+              <p style={{ margin: 0 }}>{a.description}</p>
+            </li>
+          ))}
+        </ul>
 
         <button onClick={() => (isFav ? removeFavorite(numericId): addFavorite(numericId))}
            style={{
@@ -590,7 +687,20 @@ useEffect(() => {
 
     return(
       <>
-        <div className="poke-card" onClick={() => navigate(`/pokemon/${id}`)}>
+        <div 
+          className="poke-card" 
+          onClick={() => navigate(`/pokemon/${id}`)}
+          style={{
+            background: `${TYPE_COLORS[types[0]]}30`,
+            border: `2px solid ${TYPE_COLORS[types[0]]}`,
+            borderRadius: "12px",
+            padding: "0.7rem",
+            cursor: "pointer",
+            transition: "transform 0.15s ease"
+          }}
+          >
+
+
           <img 
             src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`}
             alt={name}
