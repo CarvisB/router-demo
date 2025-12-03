@@ -191,10 +191,67 @@ useEffect(() => {
 
     return ( 
       <>
-        <h1>Home Page</h1>
-        <button onClick={() => navigate("/pokedex")}>
-          Go to Pokedex
-        </button>
+       <div
+          style={{
+            minHeight: "70vh",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            textAlign: "center",
+            padding: "2rem",
+            background: "linear-gradient(135deg, #ffcb05 0%, #3b4cca 70%)",
+            color: "white",
+            borderRadius: "16px",
+            margin: "1rem",
+          }}
+        >
+          <h1 style={{ fontSize: "3rem", marginBottom: "0.5rem" }}>Pokédex</h1>
+
+          <p style={{ fontSize: "1.2rem", maxWidth: "500px", opacity: 0.9 }}>
+            Explore all Pokémon across every region. Search, filter, favorite, and discover details instantly.
+          </p>
+
+          <button
+            onClick={() => navigate("/pokedex")}
+            style={{
+              marginTop: "1.5rem",
+              padding: "0.75rem 2rem",
+              borderRadius: "10px",
+              fontSize: "1.2rem",
+              fontWeight: "bold",
+              background: "#ff4444",
+              color: "white",
+              border: "none",
+              cursor: "pointer",
+            }}
+          >
+            🔍 Enter Pokédex
+          </button>
+
+          <button
+            onClick={() => navigate(`/pokemon/${Math.floor(Math.random() * 1025) + 1}`)}
+            style={{
+              marginTop: "1rem",
+              padding: "0.6rem 1.5rem",
+              borderRadius: "8px",
+              fontSize: "1rem",
+              background: "#3b4cca",
+              color: "white",
+              border: "none",
+              cursor: "pointer",
+              opacity: 0.9,
+            }}
+          >
+            🎲 Surprise Me
+          </button>
+
+          <div style={{ marginTop: "2rem", fontSize: "4rem" }}>
+            <span role="img" aria-label="pokeball">
+              🔴⚪
+            </span>
+          </div>
+        </div>
       </>
     )
   }
@@ -208,6 +265,7 @@ useEffect(() => {
     const [page, setPage] = useState(1);
     const [viewMode, setViewMode] = useState<"list" | "grid">("list");
     const [sortBy, setSortBy] = useState<"id-asc" | "id-desc" | "name-asc" | "name-desc">("id-asc");
+    const [region, setRegion] = useState<string>("");
 
     const pageSize = 20;
     const type: string | null = searchParams.get("type");
@@ -252,6 +310,19 @@ useEffect(() => {
       setPage(1);
     }, [type])
 
+  const REGION_RANGES: Record<string, [number, number]> = {
+      kanto: [1, 151],
+      johto: [152, 251],
+      hoenn: [252, 386],
+      sinnoh: [387, 493],
+      unova: [494, 649],
+      kalos: [650, 721],
+      alola: [722, 809],
+      galar: [810, 898],
+      hisui: [899, 905],
+      paldea: [906, 1025],
+    };
+
      const filt = pokemonList.filter(p =>
     p.name.toLowerCase().includes(search.toLowerCase())
     );
@@ -260,7 +331,12 @@ useEffect(() => {
   ? filt.filter(p => p.types.includes(type))
   : filt;
 
-  const sorted = [...typeFiltered].sort((a, b) => {
+  const regionFiltered = region ? typeFiltered.filter(p => {
+    const [min, max] = REGION_RANGES[region];
+    return p.id >= min && p.id <= max;
+  }) : typeFiltered;
+
+  const sorted = [...regionFiltered].sort((a, b) => {
     switch(sortBy) {
       case "id-asc":
         return a.id - b.id;
@@ -279,7 +355,7 @@ useEffect(() => {
   const end = start + pageSize;
 
   const paginated = sorted.slice(start, end);
-  const totalPages = Math.ceil(sorted.length / pageSize);
+  const totalPages = Math.ceil(regionFiltered.length / pageSize);
 
 
     
@@ -335,6 +411,22 @@ useEffect(() => {
         </select>
       </div>
 
+      <button
+        onClick={() => navigate(`/pokemon/${Math.floor(Math.random() * 1025) + 1}`)}
+        style={{
+          padding: "0.6rem 1rem",
+          background: "#ff5757",
+          color: "white",
+          border: "none",
+          borderRadius: "8px",
+          cursor: "pointer",
+          marginBottom: "1rem",
+          fontWeight: "bold"
+        }}
+      >
+        🎲 Random Pokémon
+      </button>
+
       <div style={{ marginBottom: "1rem", display: "flex", gap: "1rem" }}>
         <button
           onClick={() => setViewMode("list")}
@@ -370,6 +462,22 @@ useEffect(() => {
         <button onClick={() => setType("steel")}>⚙️ Steel Pokemon</button>
         <button onClick={() => setType("fairy")}>✨ Fairy Pokemon</button>
         <button onClick={() => setType("")}>Clear Filter</button>
+      </div>
+
+      <div style={{ margin: "1rem 0", display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+        <button onClick={() => setRegion("kanto")}>Kanto (1–151)</button>
+        <button onClick={() => setRegion("johto")}>Johto (152–251)</button>
+        <button onClick={() => setRegion("hoenn")}>Hoenn (252–386)</button>
+        <button onClick={() => setRegion("sinnoh")}>Sinnoh (387–493)</button>
+        <button onClick={() => setRegion("unova")}>Unova (494–649)</button>
+        <button onClick={() => setRegion("kalos")}>Kalos (650–721)</button>
+        <button onClick={() => setRegion("alola")}>Alola (722–809)</button>
+        <button onClick={() => setRegion("galar")}>Galar (810–898)</button>
+        <button onClick={() => setRegion("hisui")}>Hisui (899–905)</button>
+        <button onClick={() => setRegion("paldea")}>Paldea (906–1025)</button>
+
+        {/* Clear region filter */}
+        <button onClick={() => setRegion("")}>Clear Region</button>
       </div>
 
       {viewMode === "list" ? (
@@ -505,16 +613,16 @@ useEffect(() => {
 
     const [pokemon, setPokemon] = useState<null | {
       name: string;
-      sprites: { front_default: string};
+      sprites: { front_default: string; front_shiny: string};
       types: 
       {type: {name: string} }[];
       stats: {base_stat: number; stat: {name: string}}[];
       abilities: {name: string; description: string }[];
     }>(null);
-
-    const [loading, setLoading] = useState<boolean>(true);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-  
+    const [shiny, setShiny] = useState(false)
+
     useEffect(() => {
       async function fetchPokemon() {
         try{
@@ -564,74 +672,103 @@ useEffect(() => {
 
     return(
       <>
-        <h1>
-          #{numericId} - {pokemon.name.toUpperCase()}
-        </h1>
+        <div
+          style={{
+            background: `${TYPE_COLORS[pokemon.types[0].type.name]}30`,
+            border: `3px solid ${TYPE_COLORS[pokemon.types[0].type.name]}`,
+            borderRadius: "16px",
+            padding: "1.5rem",
+            maxWidth: "600px",
+            margin: "auto",
+            marginTop: "1rem"
+          }}
+        >
+          <h1 style={{ display: "flex", justifyContent: "space-around" }}>
+            #{numericId} - {pokemon.name.toUpperCase()}
+                      <button
+            onClick={() => setShiny(!shiny)}
+              style={{
+                marginTop: "1rem",
+                padding: "0.5rem 1rem",
+                borderRadius: "8px",
+                border: "none",
+                background: shiny ? "#f8d030" : "#ddd",
+                cursor: "pointer",
+                fontSize: "1rem",
+                fontWeight: "bold"
+              }}
+            >
+            {shiny ? "✨ Shiny Mode On" : "☆ Shiny Mode Off"}
+          </button>
+          </h1>
 
-        <img 
-          src={pokemon.sprites.front_default}
-          alt={pokemon.name}
-          width={250}
-        />
+          <img 
+            src={shiny ? pokemon.sprites.front_shiny : pokemon.sprites.front_default}
+            alt={pokemon.name}
+            width={250}
+            style={{ transition: "0.25 ease" }}
+          />
 
-        
-        <h3>Type(s):</h3>
-        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-          {pokemon.types.map((t, i) => (
-            <TypeBadge key={i} type={t.type.name} />
-          ))}
-        </div>
+          
+          <h3>Type(s):</h3>
+          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+            {pokemon.types.map((t, i) => (
+              <TypeBadge key={i} type={t.type.name} />
+            ))}
+          </div>
 
-        <h3>Stats:</h3>
-        <div style={{ maxWidth: "400px" }}>
-          {pokemon.stats.map((s, i) => (
-            <div key={i} style={{ marginBottom: "0.4rem" }}>
-              <strong>{s.stat.name.toUpperCase()}</strong>
+          <h3>Stats:</h3>
+          <div style={{ maxWidth: "400px" }}>
+            {pokemon.stats.map((s, i) => (
+              <div key={i} style={{ marginBottom: "0.4rem" }}>
+                <strong>{s.stat.name.toUpperCase()}</strong>
 
-              <div
-                style={{
-                  background: "#ddd",
-                  height: "10px",
-                  borderRadius: "6px",
-                  overflow: "hidden",
-                  marginTop: "4px"
-                }}
-              >
                 <div
                   style={{
-                    width: `${(s.base_stat / 150) * 100}%`,
-                    background: "#4caf50",
-                    height: "100%"
+                    background: "#ddd",
+                    height: "10px",
+                    borderRadius: "6px",
+                    overflow: "hidden",
+                    marginTop: "4px"
                   }}
-                ></div>
+                >
+                  <div
+                    style={{
+                      width: `${(s.base_stat / 150) * 100}%`,
+                      background: "#4caf50",
+                      height: "100%"
+                    }}
+                  ></div>
+                </div>
+
+                <span style={{ fontSize: "0.8rem" }}>{s.base_stat}</span>
               </div>
+            ))}
+          </div>
 
-              <span style={{ fontSize: "0.8rem" }}>{s.base_stat}</span>
-            </div>
-          ))}
+          <h3 style={{ marginTop: "1rem" }}>Abilities:</h3>
+          <ul>
+            {pokemon.abilities.map((a, i) => (
+              <li key={i} style={{ marginBottom: "0.8rem" }}>
+                <strong>{a.name.toUpperCase()}</strong>
+                <p style={{ margin: 0 }}>{a.description}</p>
+              </li>
+            ))}
+          </ul>
+
+          <button onClick={() => (isFav ? removeFavorite(numericId): addFavorite(numericId))}
+            style={{
+                  fontSize: "2rem",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  marginTop: "1rem"
+                }}
+          >
+            {isFav ? "⭐ Remove Favorite" : "☆ Add to Favorite"}
+          </button>
+          
         </div>
-
-        <h3 style={{ marginTop: "1rem" }}>Abilities:</h3>
-        <ul>
-          {pokemon.abilities.map((a, i) => (
-            <li key={i} style={{ marginBottom: "0.8rem" }}>
-              <strong>{a.name.toUpperCase()}</strong>
-              <p style={{ margin: 0 }}>{a.description}</p>
-            </li>
-          ))}
-        </ul>
-
-        <button onClick={() => (isFav ? removeFavorite(numericId): addFavorite(numericId))}
-           style={{
-                fontSize: "2rem",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                marginTop: "1rem"
-              }}
-        >
-          {isFav ? "⭐ Remove Favorite" : "☆ Add to Favorite"}
-        </button>
       </>
     )
   }
