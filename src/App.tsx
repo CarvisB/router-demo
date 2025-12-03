@@ -514,8 +514,7 @@ useEffect(() => {
 
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
-    const [abilityInfo, setAbilityInfo] = useState<Record<string, string>>({});
-
+  
     useEffect(() => {
       async function fetchPokemon() {
         try{
